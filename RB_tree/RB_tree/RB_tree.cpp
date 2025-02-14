@@ -50,16 +50,6 @@ TreeNode* RB_Tree::find(int x, bool ins) {
 		return tmp;
 	}
 	else {
-		/*if (tmp->right != nullptr && x > tmp->key) {
-			if (tmp->right->key == x) {
-				return tmp->right;
-			}
-		}
-		else if (tmp->left != nullptr && x < tmp->key) {
-			if (tmp->left->key == x) {
-				return tmp->left;
-			}
-		}*/
 		if (tmp->parent->key == x) {
 			return tmp->parent;
 		}
@@ -79,30 +69,7 @@ void RB_Tree::insert(int x)
 
 	TreeNode* tmp = SubInsert(x);
 
-
-
-	if (tmp->color == tmp->parent->color) {
-		TreeNode* grand = tmp->parent->parent;
-		TreeNode* uncle = nullptr;
-		if (!isRightSon(tmp->parent)) {
-			uncle = grand->right;
-		}
-		else {
-			uncle = grand->left;
-		}
-
-		if (uncle) {
-			if (uncle->color == RED) {
-				ifUncleRed(tmp, uncle);
-			}
-			else if (uncle->color == BLACK) {
-				ifUncleBlack(tmp);
-			}
-		}
-		else {
-			tmp->color = BLACK;
-		}
-	}
+	TwoRedElementsCase(tmp);
 }
 
 void RB_Tree::erase(int x)
@@ -170,98 +137,124 @@ void RB_Tree::GetTreeNodes_(std::vector<InsertedNode> &tree, TreeNode* tree_)
 
 }
 
-void RB_Tree::ifUncleRed(TreeNode* &tmp, TreeNode* &uncle)
+void RB_Tree::RepaintUncleRedCase(TreeNode* tmp, TreeNode* uncle)
 {
 	tmp = tmp->parent;
 	tmp->color = BLACK;
 
 	tmp = tmp->parent;
 
+	uncle->color = BLACK;
+	
 	if (tmp != root) {
 		tmp->color = RED;
+		if (tmp && tmp->parent && tmp->color == RED && tmp->parent->color == RED) {
+			TwoRedElementsCase(tmp);
+		}
 	}
-
-	uncle->color = BLACK;
 }
 
-void RB_Tree::ifUncleBlack(TreeNode* &tmp)
+void RB_Tree::RepaintUncleBlackCase(TreeNode* tmp)
 {
-	if (tmp == tmp->parent->right) {
-		TreeNode* bufferParent = tmp->parent->parent;
-		TreeNode* buffer = tmp->parent;
-		TreeNode* bufferLeft = tmp->parent->left;
-		TreeNode* bufferRight = tmp->parent->right;
-
-		tmp->parent = tmp;
-		tmp = tmp->parent;
-
-		tmp->parent = bufferParent;
-		tmp->left = buffer;
-		tmp->left->parent = tmp;
+	if (isRightSon(tmp) && !isRightSon(tmp->parent)) {
+		LeftRightRotate(tmp);
 		tmp = tmp->left;
-		tmp->left = bufferLeft;
-		tmp->right = nullptr;
 	}
-	if (tmp == tmp->parent->left) {
+	else if (!isRightSon(tmp) && isRightSon(tmp->parent)) {
+		RightLeftRotate(tmp);
+
+		tmp = tmp->right;
+	}
+
+	if (isRightSon(tmp)) {
+		TreeNode* grandgrand = tmp->parent->parent->parent;
+		bool rightSon;
+		if (grandgrand) {
+			rightSon = isRightSon(tmp->parent->parent);
+		}
+
 		tmp = tmp->parent;
 
-		TreeNode* bufferParent = new TreeNode;
-		bool parent = false;
-		bool leftSon = false;
-		bool root_ = false;
+		TreeNode* buffer_son = tmp->left;
 
-		if (tmp->parent->parent) {
-			if (tmp->parent->key > tmp->parent->parent->key) {
-				leftSon = true;
+		tmp->color = BLACK;
+		tmp->right->color = RED;
+		tmp->parent->left->color = BLACK;
+
+		if (tmp->parent == root) {
+			root = tmp;
+		}
+
+		tmp->left = tmp->parent;
+		tmp->left->parent = tmp;
+		tmp->left->color = RED;
+
+		if (grandgrand) {
+			if (rightSon) {
+				grandgrand->right = tmp;
 			}
 			else {
-				leftSon = false;
+				grandgrand->left = tmp;
 			}
-			bufferParent = tmp->parent->parent;
-			parent = true;
+			tmp->parent = grandgrand;
 		}
-		TreeNode* buffer = tmp->parent;
-		TreeNode* bufferRight = tmp->parent->right;
-
-		tmp->parent = nullptr;
-
-		if (tmp->right) {
-			while (tmp->right) {
-				tmp = tmp->right;
-			}
+		else {
+			tmp->parent = nullptr;
 		}
 
-		tmp->right = buffer;
-		tmp->right->parent = tmp;
-		tmp = tmp->right;
-		tmp->left = nullptr;
-		tmp->right = bufferRight;
+		if (buffer_son) {
+			tmp = tmp->left;
 
-		if (tmp == root) {
-			root_ = true;
+			
+			tmp->right = buffer_son;
+			tmp->right->parent = tmp;
+
+			tmp->right->color = BLACK;
+		}
+	}
+	else {
+		TreeNode* grandgrand = tmp->parent->parent->parent;
+		bool rightSon;
+		if (grandgrand) {
+			rightSon = isRightSon(tmp->parent->parent);
 		}
 
-		while (tmp->parent) {
-			tmp = tmp->parent;
-		}
+		tmp = tmp->parent;
 
-		if (parent) {
-			tmp->parent = bufferParent;
-			if (leftSon) {
-				bufferParent->left = tmp;
-			}
-			else {
-				bufferParent->right = tmp;
-			}
-		}
+		TreeNode* buffer_son = tmp->right;
 
 		tmp->color = BLACK;
 		tmp->left->color = RED;
-		tmp->right->color = RED;
-		tmp->right->right->color = BLACK;
+		tmp->parent->right->color = BLACK;
 
-		if (root_) {
+		if (tmp->parent == root) {
 			root = tmp;
+		}
+
+		tmp->right = tmp->parent;
+		tmp->right->parent = tmp;
+		tmp->right->color = RED;
+
+		if (grandgrand) {
+			if (rightSon) {
+				grandgrand->right = tmp;
+			}
+			else {
+				grandgrand->left = tmp;
+			}
+			tmp->parent = grandgrand;
+		}
+		else {
+			tmp->parent = nullptr;
+		}
+
+		if (buffer_son) {
+			tmp = tmp->right;
+			
+			tmp->left = buffer_son;
+			tmp->left->parent = tmp;
+
+			tmp->left->color = BLACK;
 		}
 	}
 }
@@ -294,9 +287,130 @@ TreeNode* RB_Tree::SubInsert(int x)
 			}
 		}
 	}
+	return tmp;
 }
 
 bool RB_Tree::isRightSon(TreeNode* tmp)
 {
 	return tmp && tmp->parent->right == tmp;
+}
+
+void RB_Tree::rotate(TreeNode* tmp) { // Изменить название функции
+	TreeNode* grand = tmp->parent->parent;
+	TreeNode* grandgrand = nullptr;
+	if (grand) {
+		grandgrand = grand->parent;
+	}
+	bool rightSon;
+
+	if (grandgrand) { 
+		rightSon = isRightSon(grand);
+	}
+
+	if (grand == root) {
+		root = tmp->parent;
+	}
+
+	if (isRightSon(tmp->parent)) {
+		grand->right = tmp->parent->left;
+		grand->color = RED;
+
+		tmp->parent->left = grand;
+
+		tmp->parent->left->parent = tmp->parent;
+	}
+	else {
+		grand->left = tmp->parent->right;
+		grand->color = RED;
+
+		tmp->parent->right = grand;
+
+		tmp->parent->right->parent = tmp->parent;
+	}
+
+	if (grandgrand) {
+		if (rightSon) {
+			grandgrand->right = tmp->parent;
+		}
+		else {
+			grandgrand->left = tmp->parent;
+		}
+	}
+
+	tmp->parent->parent = grandgrand;
+
+	tmp->parent->color = BLACK;
+}
+
+void RB_Tree::TwoRedElementsCase(TreeNode* tmp) { // Изменить название фукнции
+	if (tmp->color == RED && tmp->parent->color == RED) {
+		TreeNode* grand = tmp->parent->parent;
+		TreeNode* uncle = nullptr;
+		if (isRightSon(tmp->parent)) {
+			uncle = grand->left;
+		}
+		else {
+			uncle = grand->right;
+		}
+
+		if (uncle) {
+			if (uncle->color == RED) {
+				RepaintUncleRedCase(tmp, uncle);
+			}
+			else if (uncle->color == BLACK) {
+				RepaintUncleBlackCase(tmp);
+			}
+		}
+		else {
+			if (isRightSon(tmp) && !isRightSon(tmp->parent)) { // Проверить на дубляцию кода, в большой поворот входят маленькие
+				LeftRightRotate(tmp);
+				tmp = tmp->left;
+			}
+			else if (!isRightSon(tmp) && isRightSon(tmp->parent)) {
+				RightLeftRotate(tmp);
+				tmp = tmp->right;
+			}
+			rotate(tmp);
+		}
+	}
+}
+
+void RB_Tree::LeftRightRotate(TreeNode* tmp)
+{
+	if (tmp->left) {
+		tmp->parent->right = tmp->left;
+		tmp->left->parent = tmp->parent;
+	}
+	else {
+		tmp->parent->right = nullptr;
+	}
+	tmp->left = tmp->parent;
+	tmp->parent = tmp->parent->parent;
+	tmp->left->parent = tmp;
+	if (tmp->key >= tmp->parent->key) {
+		tmp->parent->right = tmp;
+	}
+	else {
+		tmp->parent->left = tmp;
+	}
+}
+
+void RB_Tree::RightLeftRotate(TreeNode* tmp)
+{
+	if (tmp->right) {
+		tmp->parent->left = tmp->right;
+		tmp->right->parent = tmp->parent;
+	}
+	else {
+		tmp->parent->left = nullptr;
+	}
+	tmp->right = tmp->parent;
+	tmp->parent = tmp->parent->parent;
+	tmp->right->parent = tmp;
+	if (tmp->key >= tmp->parent->key) {
+		tmp->parent->right = tmp;
+	}
+	else {
+		tmp->parent->left = tmp;
+	}
 }

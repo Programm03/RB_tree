@@ -12,8 +12,6 @@ struct TreeNode {
 	TreeNode* left = nullptr;
 	TreeNode* right = nullptr;
 	TreeNode* parent = nullptr;
-
-
 };
 
 struct InsertedNode {
@@ -35,9 +33,12 @@ public:
 private:
 	TreeNode* root = nullptr;
 	void GetTreeNodes_(std::vector<InsertedNode> &tree, TreeNode* tree_);
-	void ifUncleRed(TreeNode*& tmp, TreeNode* &uncle);
-	void ifUncleBlack(TreeNode*& tmp);
+	void RepaintUncleRedCase(TreeNode* tmp, TreeNode* uncle);
+	void RepaintUncleBlackCase(TreeNode* tmp);
 	TreeNode* SubInsert(int x);
 	bool isRightSon(TreeNode* tmp);
-	void checkingBalance(TreeNode*& tmp);
+	void rotate(TreeNode* tmp);
+	void TwoRedElementsCase(TreeNode* tree);
+	void LeftRightRotate(TreeNode* tmp);
+	void RightLeftRotate(TreeNode* tmp);
 };
