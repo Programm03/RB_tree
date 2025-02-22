@@ -289,3 +289,67 @@ TEST(Structure_RB_Tree, Hundred_Elements) {
 
   EXPECT_EQ(nodes, expected);
 }
+
+TEST(SimpleErase, Element_Without_Sons) {
+	RB_Tree tree;
+
+	tree.insert(1);
+	tree.insert(2);
+	tree.insert(3);
+
+	tree.erase(1);
+
+	std::vector<InsertedNode> nodes = tree.GetTreeNodes();
+	std::vector<InsertedNode> expected{ {Color::BLACK, 2}, {Color::RED, 3} };
+
+  EXPECT_EQ(nodes, expected);
+}
+
+TEST(SimpleErase, Element_With_One_Son) {
+	RB_Tree tree;
+
+	tree.insert(9);
+	tree.insert(7);
+	tree.insert(10);
+	tree.insert(11);
+
+	tree.erase(10);
+
+	std::vector<InsertedNode> nodes = tree.GetTreeNodes();
+	std::vector<InsertedNode> expected{ {Color::BLACK, 7}, {Color::BLACK, 9}, {Color::BLACK, 11} };
+	
+  EXPECT_EQ(nodes, expected);
+}
+
+TEST(SimpleErase, No_Element) {
+	RB_Tree tree;
+
+	tree.erase(1);
+
+	tree.insert(1);
+
+	tree.erase(2);
+
+	std::vector<InsertedNode> nodes = tree.GetTreeNodes();
+	std::vector<InsertedNode> expected{ {Color::BLACK, 1} };
+
+  EXPECT_EQ(nodes, expected);
+}
+
+TEST(SimpleErase, Element_With_Two_Son) {
+	RB_Tree tree;
+
+	tree.insert(1);
+	tree.insert(2);
+	tree.insert(3);
+	tree.insert(0);
+	tree.insert(5);
+	tree.insert(4);
+
+	tree.erase(4);
+
+	std::vector<InsertedNode> nodes = tree.GetTreeNodes();
+	std::vector<InsertedNode> expected{ {Color::RED, 0}, {Color::BLACK, 1}, {Color::BLACK, 2}, {Color::BLACK, 3}, {Color::RED, 5} };
+
+  EXPECT_EQ(nodes, expected);
+}

@@ -74,44 +74,88 @@ void RB_Tree::insert(int x)
 
 void RB_Tree::erase(int x)
 {
-
-	if (root->key == x) { // ≈сли пользователь захотел удалить корень
-		if (root->right != nullptr) {
-			TreeNode* elemR = root->right; // ¬ременный указатель дл€ перемещни€ 
-											// правого узла удал€емого корн€
-			root = root->left;
-			root->right = elemR;
-
-			//delete elemR;
-		}
-		else if (root->left != nullptr){
-			TreeNode* elemL = root->left; // “оже самое, но дл€ левого узла
-			root = root->right;
-			root->left = elemL; // nullptr exeption
-			
-			//delete elemL;
-		}
-		root->parent = nullptr;
+	if (!root) {
 		return;
 	}
 
-	TreeNode* deleteElement = find(x); // ¬ременна€ переменна€ дл€ удалени€
-									   // желаемого узла
-	TreeNode* tmp = deleteElement->parent;
-	if (deleteElement->key > root->key) {
-		if (deleteElement->right == nullptr && deleteElement->left == nullptr) {
-			deleteElement = nullptr;
+	TreeNode* tmp = root;
+	while (tmp) {
+		if (x < tmp->key) {
+			tmp = tmp->left;
 		}
-		else if (deleteElement->left != nullptr && deleteElement->right == nullptr){
-			deleteElement->parent->left = deleteElement->left;
-			deleteElement->left->parent = tmp;
+		else if (x > tmp->key) {
+			tmp = tmp->right;
 		}
-		else if (deleteElement->right != nullptr) {
-			deleteElement->parent->right = deleteElement->left;
-			deleteElement->right->parent = tmp;
+		else {
+			break;
 		}
-		delete deleteElement;
 	}
+
+	if (!tmp) {
+		return;
+	}
+
+	if (!tmp->left && !tmp->right) {
+		if (tmp->parent) {
+			if (x < tmp->parent->key) {
+				tmp->parent->left = nullptr;
+			}
+			else {
+				tmp->parent->right = nullptr;
+			}
+		}
+	}
+	else if (tmp->left && !tmp->right) {
+		tmp->parent->left = tmp->left;
+		tmp->left->parent = tmp->parent;
+		tmp->left->color = BLACK;
+	}
+	else if (!tmp->left && tmp->right) {
+		tmp->parent->right = tmp->right;
+		tmp->right->parent = tmp->parent;
+		tmp->right->color = BLACK;
+	}
+	else {
+		TreeNode* bufferTmp = tmp;
+
+		tmp = tmp->left;
+		while (tmp->right) {
+			tmp = tmp->right;
+		}
+
+		if (tmp->left) {
+			tmp->parent->right = tmp->left;
+			tmp->left->parent = tmp->parent;
+		}
+
+		if (isRightSon(tmp)) {
+			tmp->parent->right = nullptr;
+		}
+		else {
+			tmp->parent->left = nullptr;
+		}
+
+		if (bufferTmp->parent) {
+			tmp->parent = bufferTmp->parent;
+			if (isRightSon(bufferTmp)) {
+				bufferTmp->parent->right = tmp;
+			}
+			else {
+				bufferTmp->parent->left = tmp;
+			}
+		}
+		else {
+			tmp->parent = nullptr;
+		}
+
+		tmp->left = bufferTmp->left;
+		tmp->right = bufferTmp->right;
+		tmp->color = BLACK;
+
+		bufferTmp = nullptr;
+	}
+
+	tmp = nullptr;
 }
 
 std::vector<InsertedNode> RB_Tree::GetTreeNodes()
