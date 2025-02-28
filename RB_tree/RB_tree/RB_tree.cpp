@@ -2,61 +2,7 @@
 #include <iostream>
 #include <vector>
 
-TreeNode* RB_Tree::find(int x, bool ins) {
-	TreeNode* tmp = root;
-	
-	bool right;
-
-	if (x > tmp->key) {
-		right = true;
-	}
-	else {
-		right = false;
-	}
-
-	while (true) {
-		if (((tmp->key > x) || (tmp->right == nullptr)) && right) {
-			if (tmp->left != nullptr) {
-				if (tmp->left->key > x) {
-					right = !right;
-				}
-				right = false;
-			}
-			else {
-				break;
-			}
-		}
-		else if (((tmp->key < x) || (tmp->left == nullptr)) && !right) {
-			if (tmp->right != nullptr) {
-				if (tmp->right->key < x) {
-					right = !right;
-				}
-				right = true;
-			}
-			else {
-				break;
-			}
-		}
-
-		if (right) {
-			tmp = tmp->right;
-		}
-		else {
-			tmp = tmp->left;
-		}
-	}
-
-	if (ins) {
-		return tmp;
-	}
-	else {
-		if (tmp->parent->key == x) {
-			return tmp->parent;
-		}
-		else {
-			return nullptr;
-		}
-	}
+TreeNode* RB_Tree::find(int x, bool ins=false) {
 }
 
 void RB_Tree::insert(int x)
@@ -95,13 +41,22 @@ void RB_Tree::erase(int x)
 		return;
 	}
 
-	if (!tmp->left && !tmp->right) {
-		if (tmp->parent) {
-			if (x < tmp->parent->key) {
-				tmp->parent->left = nullptr;
-			}
-			else {
-				tmp->parent->right = nullptr;
+	if (!tmp->left && !tmp->right && tmp->color == RED && tmp->parent) { // Совместить условие с условием ниже
+		if (x < tmp->parent->key) {
+			tmp->parent->left = nullptr;
+		}
+		else {
+			tmp->parent->right = nullptr;
+		}
+	}
+	else if (!tmp->left && !tmp->right && tmp->color == BLACK && tmp->parent) {
+		if (isRightSon(tmp)) {
+
+		}
+		else {
+			if (tmp->parent->right->color == BLACK) {
+				TreeNode* brother = tmp->parent->right;
+				if (brother->right->color == RED || brother->left->color == RED);
 			}
 		}
 	}
@@ -116,46 +71,46 @@ void RB_Tree::erase(int x)
 		tmp->right->color = BLACK;
 	}
 	else {
-		TreeNode* bufferTmp = tmp;
+		TreeNode* replaceElement = tmp; // tmp в этой фунции был удаляемым элементом, в этом моменте он стал шагаемым.
+		// Изменить переменные tmp и buffertmp в этом случае.
+		// Переименовать tmp и bufferTmp
 
-		tmp = tmp->left;
-		while (tmp->right) {
-			tmp = tmp->right;
+		replaceElement = replaceElement->left;
+		while (replaceElement->right) {
+			replaceElement = replaceElement->right;
 		}
 
-		if (tmp->left) {
-			tmp->parent->right = tmp->left;
-			tmp->left->parent = tmp->parent;
+		if (replaceElement->left) {
+			replaceElement->parent->right = replaceElement->left;
+			replaceElement->left->parent = replaceElement->parent;
 		}
 
-		if (isRightSon(tmp)) {
-			tmp->parent->right = nullptr;
+		if (isRightSon(replaceElement)) { // Лишнее дейтвие, логично что это правый сын
+			replaceElement->parent->right = nullptr;
 		}
 		else {
-			tmp->parent->left = nullptr;
+			replaceElement->parent->left = nullptr;
 		}
 
-		if (bufferTmp->parent) {
-			tmp->parent = bufferTmp->parent;
-			if (isRightSon(bufferTmp)) {
-				bufferTmp->parent->right = tmp;
+		if (tmp->parent) {
+			replaceElement->parent = tmp->parent;
+			if (isRightSon(tmp)) {
+				tmp->parent->right = replaceElement;
 			}
 			else {
-				bufferTmp->parent->left = tmp;
+				tmp->parent->left = replaceElement;
 			}
 		}
 		else {
-			tmp->parent = nullptr;
+			replaceElement->parent = nullptr;
 		}
 
-		tmp->left = bufferTmp->left;
-		tmp->right = bufferTmp->right;
-		tmp->color = BLACK;
-
-		bufferTmp = nullptr;
+		replaceElement->left = tmp->left;
+		replaceElement->right = tmp->right;
+		replaceElement->color = BLACK;
 	}
 
-	tmp = nullptr;
+	delete tmp;
 }
 
 std::vector<InsertedNode> RB_Tree::GetTreeNodes()
